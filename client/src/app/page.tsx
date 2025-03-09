@@ -9,6 +9,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Drawer,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerFooter,
+} from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Team {
   name: string;
@@ -36,30 +47,40 @@ interface SeriesResult {
   games: GameResult[];
 }
 
-// Interface for conference-specific results
 interface ConferenceResults {
   round1: SeriesResult[];
   round2: SeriesResult[];
   finals: SeriesResult;
 }
 
-// Updated PlayoffResults interface with properly typed conferences
 interface PlayoffResults {
   Eastern: ConferenceResults;
   Western: ConferenceResults;
   Finals: SeriesResult;
-  teams: Team[];
+  teams?: Team[];
 }
 
 export default function Home() {
   const [results, setResults] = useState<PlayoffResults | null>(null);
   const [loading, setLoading] = useState(false);
+  const [weightings, setWeightings] = useState({
+    offense: 30,
+    defense: 45,
+    threePoint: 25,
+  });
 
   const fetchSimulation = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3001/api/simulate");
+      const res = await fetch("http://localhost:3001/api/simulate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(weightings),
+      });
       const data = await res.json();
+      console.log("Backend Response:", data); // Debugging log
       setResults(data);
     } catch (error) {
       console.error("Error fetching simulation:", error);
@@ -70,6 +91,10 @@ export default function Home() {
   useEffect(() => {
     fetchSimulation();
   }, []);
+
+  const handleWeightChange = (key: string, value: number) => {
+    setWeightings((prev) => ({ ...prev, [key]: value }));
+  };
 
   const renderSeries = (
     series: SeriesResult[] | undefined,
@@ -118,17 +143,76 @@ export default function Home() {
       <h1 className="text-3xl font-bold text-center mb-6">
         NBA Playoff Simulator
       </h1>
-      <Button onClick={fetchSimulation} className="mb-6 mx-auto block">
-        Resimulate
-      </Button>
+      <div className="flex justify-between items-center mb-6">
+        <Button onClick={fetchSimulation}>Resimulate</Button>
+        <Drawer>
+          <DrawerTrigger asChild>
+            <Button variant="outline">Adjust Weightings</Button>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Adjust Weightings</DrawerTitle>
+              <DrawerDescription>
+                Set the percentage weightings for each category.
+              </DrawerDescription>
+            </DrawerHeader>
+            <div className="p-4 space-y-4">
+              <div>
+                <Label>Offensive Rating (%)</Label>
+                <Input
+                  type="number"
+                  value={weightings.offense}
+                  onChange={(e) =>
+                    handleWeightChange("offense", parseInt(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label>Defensive Rating (%)</Label>
+                <Input
+                  type="number"
+                  value={weightings.defense}
+                  onChange={(e) =>
+                    handleWeightChange("defense", parseInt(e.target.value))
+                  }
+                />
+              </div>
+              <div>
+                <Label>3-Point Percentage (%)</Label>
+                <Input
+                  type="number"
+                  value={weightings.threePoint}
+                  onChange={(e) =>
+                    handleWeightChange("threePoint", parseInt(e.target.value))
+                  }
+                />
+              </div>
+            </div>
+            <DrawerFooter>
+              <Button onClick={fetchSimulation}>Apply</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      </div>
 
       {["Eastern", "Western"].map((conf) => {
-        // Explicitly cast conf to keyof PlayoffResults to ensure type safety
         const conference = conf as keyof Pick<
           PlayoffResults,
           "Eastern" | "Western"
         >;
-        const conferenceData = results[conference] as ConferenceResults;
+        const conferenceData = results[conference];
+
+        if (!conferenceData) {
+          console.error(`No data for ${conf} conference`);
+          return (
+            <div key={conf} className="mb-8">
+              <h2 className="text-2xl font-semibold mb-4">{conf} Conference</h2>
+              <div className="text-red-500">
+                No data available for {conf} conference.
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div key={conf} className="mb-8">
@@ -142,10 +226,16 @@ export default function Home() {
 
       <div className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">NBA Finals</h2>
-        {renderSeries([results.Finals], "NBA Finals")}
-        <h3 className="text-xl font-bold text-center text-pink-600 mt-4">
-          Champion: {results.Finals.winner.name}
-        </h3>
+        {results.Finals ? (
+          <>
+            {renderSeries([results.Finals], "NBA Finals")}
+            <h3 className="text-xl font-bold text-center text-pink-600 mt-4">
+              Champion: {results.Finals.winner.name}
+            </h3>
+          </>
+        ) : (
+          <div className="text-red-500">No data available for NBA Finals.</div>
+        )}
       </div>
 
       <Card>
@@ -154,13 +244,17 @@ export default function Home() {
         </CardHeader>
         <CardContent>
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {results.teams.map((t) => (
-              <li key={t.name} className="text-sm">
-                {t.name} (Rating: {t.weightedRating.toFixed(2)}, OFF:{" "}
-                {t.offensiveRating}, DEF: {t.defensiveRating}, 3PT%:{" "}
-                {(t.threePointPercentage * 100).toFixed(1)}%)
-              </li>
-            ))}
+            {results.teams?.length ? (
+              results.teams.map((t) => (
+                <li key={t.name} className="text-sm">
+                  {t.name} (Rating: {t.weightedRating.toFixed(2)}, OFF:{" "}
+                  {t.offensiveRating}, DEF: {t.defensiveRating}, 3PT%:{" "}
+                  {(t.threePointPercentage * 100).toFixed(1)}%)
+                </li>
+              ))
+            ) : (
+              <li className="text-sm text-red-500">No team data available</li>
+            )}
           </ul>
         </CardContent>
       </Card>
