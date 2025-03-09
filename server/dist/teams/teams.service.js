@@ -12,33 +12,33 @@ const common_1 = require("@nestjs/common");
 const teams_entity_1 = require("./teams.entity");
 let TeamsService = TeamsService_1 = class TeamsService {
     logger = new common_1.Logger(TeamsService_1.name);
-    DEFENSE_WEIGHT = 0.40;
-    SHOOTING_WEIGHT = 0.25;
-    OFFENSE_WEIGHT = 0.20;
+    DEFENSE_WEIGHT = 0.25;
+    SHOOTING_WEIGHT = 0.15;
+    OFFENSE_WEIGHT = 0.25;
     WIN_PCT_WEIGHT = 0.15;
-    HOME_COURT_ADVANTAGE = 0.03;
-    MAX_LUCK_FACTOR = 0.02;
+    HOME_COURT_ADVANTAGE = 0.10;
+    MAX_LUCK_FACTOR = 0.10;
     TEAMS = [
-        new teams_entity_1.Team('Cleveland Cavaliers', 116.2, 108.0, 36.0, 'Eastern', 1.000),
-        new teams_entity_1.Team('Boston Celtics', 122.8, 109.1, 38.5, 'Eastern', 0.833),
-        new teams_entity_1.Team('Milwaukee Bucks', 118.3, 113.8, 37.0, 'Eastern', 0.750),
-        new teams_entity_1.Team('Indiana Pacers', 118.9, 115.0, 37.5, 'Eastern', 0.700),
-        new teams_entity_1.Team('Philadelphia 76ers', 114.9, 112.4, 37.3, 'Eastern', 0.667),
-        new teams_entity_1.Team('New York Knicks', 117.5, 111.8, 36.8, 'Eastern', 0.625),
-        new teams_entity_1.Team('Miami Heat', 114.0, 113.5, 36.2, 'Eastern', 0.600),
-        new teams_entity_1.Team('Orlando Magic', 113.6, 110.5, 35.2, 'Eastern', 0.571),
-        new teams_entity_1.Team('Chicago Bulls', 112.5, 115.2, 35.8, 'Eastern', 0.500),
-        new teams_entity_1.Team('Atlanta Hawks', 115.8, 117.1, 36.5, 'Eastern', 0.429),
-        new teams_entity_1.Team('Golden State Warriors', 117.3, 114.5, 38.8, 'Western', 0.900),
-        new teams_entity_1.Team('Los Angeles Lakers', 115.8, 113.6, 35.8, 'Western', 0.889),
-        new teams_entity_1.Team('Oklahoma City Thunder', 119.5, 109.6, 39.0, 'Western', 0.800),
-        new teams_entity_1.Team('Denver Nuggets', 118.7, 111.5, 37.4, 'Western', 0.750),
-        new teams_entity_1.Team('Minnesota Timberwolves', 115.0, 107.3, 37.8, 'Western', 0.667),
-        new teams_entity_1.Team('Los Angeles Clippers', 116.2, 112.8, 38.2, 'Western', 0.625),
-        new teams_entity_1.Team('Phoenix Suns', 117.9, 113.5, 37.9, 'Western', 0.600),
-        new teams_entity_1.Team('Dallas Mavericks', 119.2, 114.2, 37.2, 'Western', 0.571),
-        new teams_entity_1.Team('Sacramento Kings', 117.1, 114.9, 36.3, 'Western', 0.556),
-        new teams_entity_1.Team('New Orleans Pelicans', 116.3, 112.4, 36.6, 'Western', 0.500),
+        new teams_entity_1.Team('Cleveland Cavaliers', 116.5, 107.8, 36.5, 'Eastern', 0.820),
+        new teams_entity_1.Team('Boston Celtics', 123.0, 109.0, 39.0, 'Eastern', 0.780),
+        new teams_entity_1.Team('New York Knicks', 117.8, 111.5, 37.0, 'Eastern', 0.710),
+        new teams_entity_1.Team('Milwaukee Bucks', 118.5, 113.5, 37.5, 'Eastern', 0.690),
+        new teams_entity_1.Team('Indiana Pacers', 119.0, 114.8, 38.0, 'Eastern', 0.670),
+        new teams_entity_1.Team('Philadelphia 76ers', 115.0, 112.0, 37.3, 'Eastern', 0.650),
+        new teams_entity_1.Team('Miami Heat', 114.2, 113.0, 36.0, 'Eastern', 0.610),
+        new teams_entity_1.Team('Orlando Magic', 113.8, 110.0, 35.5, 'Eastern', 0.590),
+        new teams_entity_1.Team('Chicago Bulls', 112.8, 115.0, 36.0, 'Eastern', 0.570),
+        new teams_entity_1.Team('Atlanta Hawks', 116.0, 117.0, 36.8, 'Eastern', 0.550),
+        new teams_entity_1.Team('Oklahoma City Thunder', 119.8, 109.5, 39.5, 'Western', 0.810),
+        new teams_entity_1.Team('Los Angeles Lakers', 116.0, 113.5, 36.0, 'Western', 0.760),
+        new teams_entity_1.Team('Denver Nuggets', 118.8, 111.0, 37.5, 'Western', 0.740),
+        new teams_entity_1.Team('Minnesota Timberwolves', 115.2, 107.0, 38.0, 'Western', 0.720),
+        new teams_entity_1.Team('Los Angeles Clippers', 116.5, 112.5, 38.5, 'Western', 0.700),
+        new teams_entity_1.Team('Golden State Warriors', 117.5, 114.0, 39.0, 'Western', 0.680),
+        new teams_entity_1.Team('Phoenix Suns', 118.0, 113.0, 38.0, 'Western', 0.650),
+        new teams_entity_1.Team('Sacramento Kings', 117.3, 114.5, 36.5, 'Western', 0.630),
+        new teams_entity_1.Team('Dallas Mavericks', 119.5, 114.0, 37.0, 'Western', 0.610),
+        new teams_entity_1.Team('New Orleans Pelicans', 116.5, 112.0, 36.8, 'Western', 0.590),
     ];
     async fetchTeamData() {
         const teams = this.TEAMS.map(team => {
@@ -131,9 +131,6 @@ let TeamsService = TeamsService_1 = class TeamsService {
         const allTeams = await this.fetchTeamData();
         const conferenceTeams = { Eastern: [], Western: [] };
         allTeams.forEach(team => conferenceTeams[team.conference].push(team));
-        for (const conf of Object.keys(conferenceTeams)) {
-            conferenceTeams[conf].sort((a, b) => a.weightedRating - b.weightedRating);
-        }
         const results = {
             Eastern: { playIn: null, round1: [], round2: [], finals: null },
             Western: { playIn: null, round1: [], round2: [], finals: null },
@@ -144,12 +141,11 @@ let TeamsService = TeamsService_1 = class TeamsService {
             const teams = conferenceTeams[conference];
             const playInResult = this.simulatePlayInTournament(teams);
             results[conference].playIn = playInResult;
-            const playoffTeams = [...teams.slice(0, 6), playInResult.seventhSeed, playInResult.eighthSeed];
             results[conference].round1 = [
-                this.simulateSeries(playoffTeams[0], playoffTeams[7]),
-                this.simulateSeries(playoffTeams[1], playoffTeams[6]),
-                this.simulateSeries(playoffTeams[2], playoffTeams[5]),
-                this.simulateSeries(playoffTeams[3], playoffTeams[4]),
+                this.simulateSeries(teams[0], playInResult.seventhSeed),
+                this.simulateSeries(teams[1], playInResult.eighthSeed),
+                this.simulateSeries(teams[2], teams[5]),
+                this.simulateSeries(teams[3], teams[4]),
             ];
             const round2Teams = results[conference].round1.map(series => series.winner);
             results[conference].round2 = [
@@ -166,18 +162,18 @@ let TeamsService = TeamsService_1 = class TeamsService {
     }
     simulatePlayInTournament(teams) {
         const playInGames = [];
-        const game1 = this.simulateSeries(teams[6], teams[7], true);
+        const game1 = this.simulateSeries(teams[8], teams[9], true);
         const game1Winner = game1.winner;
-        const game1Loser = game1.winner === teams[6] ? teams[7] : teams[6];
-        playInGames.push({ matchup: `${teams[6].name} vs. ${teams[7].name}`, winner: game1Winner.name, loser: game1Loser.name });
-        const game2 = this.simulateSeries(teams[8], teams[9], true);
-        const game2Winner = game2.winner;
-        const game2Loser = game2.winner === teams[8] ? teams[9] : teams[8];
-        playInGames.push({ matchup: `${teams[8].name} vs. ${teams[9].name}`, winner: game2Winner.name, loser: game2Loser.name });
-        const game3 = this.simulateSeries(game1Loser, game2Winner, true);
+        const game1Loser = game1.winner === teams[8] ? teams[9] : teams[8];
+        playInGames.push({ matchup: `${teams[8].name} vs. ${teams[9].name}`, winner: game1Winner.name, loser: game1Loser.name });
+        const game2 = this.simulateSeries(teams[6], teams[7], true);
+        const seventhSeed = game2.winner;
+        const game2Loser = game2.winner === teams[6] ? teams[7] : teams[6];
+        playInGames.push({ matchup: `${teams[6].name} vs. ${teams[7].name}`, winner: seventhSeed.name, loser: game2Loser.name });
+        const game3 = this.simulateSeries(game1Winner, game2Loser, true);
         const eighthSeed = game3.winner;
-        playInGames.push({ matchup: `${game1Loser.name} vs. ${game2Winner.name}`, winner: eighthSeed.name, loser: game3.winner === game1Loser ? game2Winner.name : game1Loser.name });
-        return { seventhSeed: game1Winner, eighthSeed, games: playInGames };
+        playInGames.push({ matchup: `${game1Winner.name} vs. ${game2Loser.name}`, winner: eighthSeed.name, loser: game3.winner === game1Winner ? game2Loser.name : game1Winner.name });
+        return { seventhSeed, eighthSeed, games: playInGames };
     }
     async runMultipleSimulations(count = 1000) {
         const championshipCount = {};

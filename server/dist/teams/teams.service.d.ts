@@ -4,9 +4,9 @@ export declare class TeamsService {
     DEFENSE_WEIGHT: number;
     SHOOTING_WEIGHT: number;
     OFFENSE_WEIGHT: number;
-    private readonly WIN_PCT_WEIGHT;
-    private readonly HOME_COURT_ADVANTAGE;
-    private readonly MAX_LUCK_FACTOR;
+    WIN_PCT_WEIGHT: number;
+    HOME_COURT_ADVANTAGE: number;
+    MAX_LUCK_FACTOR: number;
     private readonly TEAMS;
     fetchTeamData(): Promise<Team[]>;
     private calculateChampionshipScores;

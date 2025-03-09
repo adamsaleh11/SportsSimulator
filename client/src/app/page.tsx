@@ -68,7 +68,6 @@ export default function Home() {
     defense: 45,
     threePoint: 25,
   });
-
   const fetchSimulation = async () => {
     setLoading(true);
     try {

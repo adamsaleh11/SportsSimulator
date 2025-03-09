@@ -18,49 +18,48 @@ export class TeamsService {
   private readonly logger = new Logger(TeamsService.name);
 
   // Algorithm weights based on refined analysis
-  public DEFENSE_WEIGHT = 0.40; // 40% DRtg
-  public SHOOTING_WEIGHT = 0.25; // 25% 3PA
-  public OFFENSE_WEIGHT = 0.20; // 20% ORtg
-  private readonly WIN_PCT_WEIGHT = 0.15; // 15% Win%
-  private readonly HOME_COURT_ADVANTAGE = 0.03; // 3%
-  private readonly MAX_LUCK_FACTOR = 0.02; // ±2%
+  public DEFENSE_WEIGHT = 0.25; // 40% DRtg
+  public SHOOTING_WEIGHT = 0.15; // 25% 3PA
+  public OFFENSE_WEIGHT = 0.25; // 20% ORtg
+  public WIN_PCT_WEIGHT = 0.15; // 15% Win%
+  public HOME_COURT_ADVANTAGE = 0.10; // 3%
+  public MAX_LUCK_FACTOR = 0.10; // ±2%
 
-  // Post-All-Star break data provided by user (March 08, 2025), assuming 3P% as 3PA for this context
   private readonly TEAMS: Team[] = [
-    // Eastern Conference (since All-Star break, ordered by win percentage)
-    new Team('Cleveland Cavaliers', 116.2, 108.0, 36.0, 'Eastern', 1.000),
-    new Team('Boston Celtics', 122.8, 109.1, 38.5, 'Eastern', 0.833),
-    new Team('Milwaukee Bucks', 118.3, 113.8, 37.0, 'Eastern', 0.750),
-    new Team('Indiana Pacers', 118.9, 115.0, 37.5, 'Eastern', 0.700),
-    new Team('Philadelphia 76ers', 114.9, 112.4, 37.3, 'Eastern', 0.667),
-    new Team('New York Knicks', 117.5, 111.8, 36.8, 'Eastern', 0.625),
-    new Team('Miami Heat', 114.0, 113.5, 36.2, 'Eastern', 0.600),
-    new Team('Orlando Magic', 113.6, 110.5, 35.2, 'Eastern', 0.571),
-    new Team('Chicago Bulls', 112.5, 115.2, 35.8, 'Eastern', 0.500),
-    new Team('Atlanta Hawks', 115.8, 117.1, 36.5, 'Eastern', 0.429),
-    // Western Conference (since All-Star break, ordered by win percentage)
-    new Team('Golden State Warriors', 117.3, 114.5, 38.8, 'Western', 0.900),
-    new Team('Los Angeles Lakers', 115.8, 113.6, 35.8, 'Western', 0.889),
-    new Team('Oklahoma City Thunder', 119.5, 109.6, 39.0, 'Western', 0.800),
-    new Team('Denver Nuggets', 118.7, 111.5, 37.4, 'Western', 0.750),
-    new Team('Minnesota Timberwolves', 115.0, 107.3, 37.8, 'Western', 0.667),
-    new Team('Los Angeles Clippers', 116.2, 112.8, 38.2, 'Western', 0.625),
-    new Team('Phoenix Suns', 117.9, 113.5, 37.9, 'Western', 0.600),
-    new Team('Dallas Mavericks', 119.2, 114.2, 37.2, 'Western', 0.571),
-    new Team('Sacramento Kings', 117.1, 114.9, 36.3, 'Western', 0.556),
-    new Team('New Orleans Pelicans', 116.3, 112.4, 36.6, 'Western', 0.500),
+    // Eastern Conference (full season as of March 9, 2025, ordered by seed)
+    new Team('Cleveland Cavaliers', 116.5, 107.8, 36.5, 'Eastern', 0.820), // #1 (50+ wins, 13th straight by March 6)
+    new Team('Boston Celtics', 123.0, 109.0, 39.0, 'Eastern', 0.780),     // #2 (consistent top 2, high ORtg)
+    new Team('New York Knicks', 117.8, 111.5, 37.0, 'Eastern', 0.710),   // #3 (top 5 per trends)
+    new Team('Milwaukee Bucks', 118.5, 113.5, 37.5, 'Eastern', 0.690),   // #4 (strong East contender)
+    new Team('Indiana Pacers', 119.0, 114.8, 38.0, 'Eastern', 0.670),    // #5 (top 5 mention)
+    new Team('Philadelphia 76ers', 115.0, 112.0, 37.3, 'Eastern', 0.650), // #6 (adjusted down slightly)
+    // Play-In Teams (7-10)
+    new Team('Miami Heat', 114.2, 113.0, 36.0, 'Eastern', 0.610),        // #7 (play-in range)
+    new Team('Orlando Magic', 113.8, 110.0, 35.5, 'Eastern', 0.590),     // #8 (play-in range)
+    new Team('Chicago Bulls', 112.8, 115.0, 36.0, 'Eastern', 0.570),     // #9 (play-in range)
+    new Team('Atlanta Hawks', 116.0, 117.0, 36.8, 'Eastern', 0.550),     // #10 (play-in range)
+  
+    // Western Conference (full season as of March 9, 2025, ordered by seed)
+    new Team('Oklahoma City Thunder', 119.8, 109.5, 39.5, 'Western', 0.810), // #1 (48-11 by Feb 28, 6th straight)
+    new Team('Los Angeles Lakers', 116.0, 113.5, 36.0, 'Western', 0.760),   // #2 (8th straight by March 6)
+    new Team('Denver Nuggets', 118.8, 111.0, 37.5, 'Western', 0.740),      // #3 (40 wins by March 5, surpassed)
+    new Team('Minnesota Timberwolves', 115.2, 107.0, 38.0, 'Western', 0.720), // #4 (strong defense)
+    new Team('Los Angeles Clippers', 116.5, 112.5, 38.5, 'Western', 0.700), // #5 (risen to 8th, adjusted up)
+    new Team('Golden State Warriors', 117.5, 114.0, 39.0, 'Western', 0.680), // #6 (10-2 in last 12)
+    // Play-In Teams (7-10)
+    new Team('Phoenix Suns', 118.0, 113.0, 38.0, 'Western', 0.650),         // #7 (play-in range)
+    new Team('Sacramento Kings', 117.3, 114.5, 36.5, 'Western', 0.630),    // #8 (consistent mid-tier)
+    new Team('Dallas Mavericks', 119.5, 114.0, 37.0, 'Western', 0.610),    // #9 (play-in range)
+    new Team('New Orleans Pelicans', 116.5, 112.0, 36.8, 'Western', 0.590), // #10 (play-in range)
   ];
 
-  /**
-   * Retrieve team data with calculated championship scores.
-   */
   async fetchTeamData(): Promise<Team[]> {
     const teams = this.TEAMS.map(team => {
       return new Team(
         team.name,
         team.offensiveRating,
         team.defensiveRating,
-        team.threePointAttempts, // Using provided 3P% as 3PA placeholder
+        team.threePointAttempts,
         team.conference,
         team.winPercentage
       );
@@ -70,17 +69,14 @@ export class TeamsService {
     return teams;
   }
 
-  /**
-   * Calculate championship scores for all teams based on ranks.
-   */
   private calculateChampionshipScores(teams: Team[]): void {
     const ortgRanks = this.rankTeams(teams, 'offensiveRating');
-    const drtgRanks = this.rankTeams(teams, 'defensiveRating', true); // Inverse for DRtg
+    const drtgRanks = this.rankTeams(teams, 'defensiveRating', true);
     const tpaRanks = this.rankTeams(teams, 'threePointAttempts');
     const winPctRanks = this.rankTeams(teams, 'winPercentage');
 
     teams.forEach(team => {
-      const ortgRank = ortgRanks.get(team.name) || 20; // Max 20 since 20 teams
+      const ortgRank = ortgRanks.get(team.name) || 20;
       const drtgRank = drtgRanks.get(team.name) || 20;
       const tpaRank = tpaRanks.get(team.name) || 20;
       const winPctRank = winPctRanks.get(team.name) || 20;
@@ -93,10 +89,6 @@ export class TeamsService {
     });
   }
 
-  /**
-   * Rank teams for a given stat (1 = best, 20 = worst in this context).
-   * @param inverse If true, lower values rank higher (e.g., DRtg).
-   */
   private rankTeams(teams: Team[], stat: keyof Team, inverse: boolean = false): Map<string, number> {
     const sortedTeams = [...teams].sort((a, b) => {
       const aValue = a[stat] as number;
@@ -106,14 +98,11 @@ export class TeamsService {
 
     const ranks = new Map<string, number>();
     sortedTeams.forEach((team, index) => {
-      ranks.set(team.name, index + 1); // 1 to 20 ranking
+      ranks.set(team.name, index + 1);
     });
     return ranks;
   }
 
-  /**
-   * Simulate a playoff series between two teams.
-   */
   simulateSeries(team1: Team, team2: Team, isPlayIn = false): SeriesResult {
     let team1Wins = 0;
     let team2Wins = 0;
@@ -125,7 +114,7 @@ export class TeamsService {
       const team1HasHomeCourt = isPlayIn || [1, 2, 5, 7].includes(gameNumber);
       const luckFactor = (Math.random() * (this.MAX_LUCK_FACTOR * 2)) - this.MAX_LUCK_FACTOR;
 
-      let team1EffectiveRating = 1 / (team1.weightedRating || 1) + luckFactor; // Lower weightedRating = better
+      let team1EffectiveRating = 1 / (team1.weightedRating || 1) + luckFactor;
       let team2EffectiveRating = 1 / (team2.weightedRating || 1);
 
       if (team1HasHomeCourt) team1EffectiveRating += this.HOME_COURT_ADVANTAGE;
@@ -168,17 +157,12 @@ export class TeamsService {
     };
   }
 
-  /**
-   * Simulate the full NBA playoffs, including play-in tournament.
-   */
   async simulatePlayoffs(): Promise<PlayoffResults> {
     const allTeams = await this.fetchTeamData();
 
     const conferenceTeams: Record<string, Team[]> = { Eastern: [], Western: [] };
     allTeams.forEach(team => conferenceTeams[team.conference].push(team));
-    for (const conf of Object.keys(conferenceTeams)) {
-      conferenceTeams[conf].sort((a, b) => a.weightedRating - b.weightedRating); // Lower = better
-    }
+    // Do NOT sort by weightedRating here to preserve standings order
 
     const results: PlayoffResults = {
       Eastern: { playIn: null, round1: [], round2: [], finals: null },
@@ -192,18 +176,18 @@ export class TeamsService {
       const playInResult = this.simulatePlayInTournament(teams);
       results[conference].playIn = playInResult;
 
-      const playoffTeams = [...teams.slice(0, 6), playInResult.seventhSeed, playInResult.eighthSeed];
+      // Round 1 matchups: #1 vs 7-8 winner, #2 vs (9-10 winner vs 7-8 loser), #3 vs #6, #4 vs #5
       results[conference].round1 = [
-        this.simulateSeries(playoffTeams[0], playoffTeams[7]),
-        this.simulateSeries(playoffTeams[1], playoffTeams[6]),
-        this.simulateSeries(playoffTeams[2], playoffTeams[5]),
-        this.simulateSeries(playoffTeams[3], playoffTeams[4]),
+        this.simulateSeries(teams[0], playInResult.seventhSeed), // #1 vs 7-8 winner
+        this.simulateSeries(teams[1], playInResult.eighthSeed),  // #2 vs (9-10 winner vs 7-8 loser)
+        this.simulateSeries(teams[2], teams[5]),                 // #3 vs #6
+        this.simulateSeries(teams[3], teams[4]),                 // #4 vs #5
       ];
 
       const round2Teams = results[conference].round1.map(series => series.winner);
       results[conference].round2 = [
-        this.simulateSeries(round2Teams[0], round2Teams[3]),
-        this.simulateSeries(round2Teams[1], round2Teams[2]),
+        this.simulateSeries(round2Teams[0], round2Teams[3]), // Winner of 1 vs 4
+        this.simulateSeries(round2Teams[1], round2Teams[2]), // Winner of 2 vs 3
       ];
 
       const finalsTeams = results[conference].round2.map(series => series.winner);
@@ -217,32 +201,29 @@ export class TeamsService {
     return results;
   }
 
-  /**
-   * Simulate the play-in tournament.
-   */
   private simulatePlayInTournament(teams: Team[]): PlayInResult {
     const playInGames: PlayInGame[] = [];
 
-    const game1 = this.simulateSeries(teams[6], teams[7], true);
+    // Game 1: 9 vs 10, loser eliminated
+    const game1 = this.simulateSeries(teams[8], teams[9], true); // 9 vs 10
     const game1Winner = game1.winner;
-    const game1Loser = game1.winner === teams[6] ? teams[7] : teams[6];
-    playInGames.push({ matchup: `${teams[6].name} vs. ${teams[7].name}`, winner: game1Winner.name, loser: game1Loser.name });
+    const game1Loser = game1.winner === teams[8] ? teams[9] : teams[8];
+    playInGames.push({ matchup: `${teams[8].name} vs. ${teams[9].name}`, winner: game1Winner.name, loser: game1Loser.name });
 
-    const game2 = this.simulateSeries(teams[8], teams[9], true);
-    const game2Winner = game2.winner;
-    const game2Loser = game2.winner === teams[8] ? teams[9] : teams[8];
-    playInGames.push({ matchup: `${teams[8].name} vs. ${teams[9].name}`, winner: game2Winner.name, loser: game2Loser.name });
+    // Game 2: 7 vs 8
+    const game2 = this.simulateSeries(teams[6], teams[7], true); // 7 vs 8
+    const seventhSeed = game2.winner; // Winner gets 7th seed
+    const game2Loser = game2.winner === teams[6] ? teams[7] : teams[6];
+    playInGames.push({ matchup: `${teams[6].name} vs. ${teams[7].name}`, winner: seventhSeed.name, loser: game2Loser.name });
 
-    const game3 = this.simulateSeries(game1Loser, game2Winner, true);
-    const eighthSeed = game3.winner;
-    playInGames.push({ matchup: `${game1Loser.name} vs. ${game2Winner.name}`, winner: eighthSeed.name, loser: game3.winner === game1Loser ? game2Winner.name : game1Loser.name });
+    // Game 3: Winner of 9 vs 10 vs Loser of 7 vs 8
+    const game3 = this.simulateSeries(game1Winner, game2Loser, true);
+    const eighthSeed = game3.winner; // Winner gets 8th seed
+    playInGames.push({ matchup: `${game1Winner.name} vs. ${game2Loser.name}`, winner: eighthSeed.name, loser: game3.winner === game1Winner ? game2Loser.name : game1Winner.name });
 
-    return { seventhSeed: game1Winner, eighthSeed, games: playInGames };
+    return { seventhSeed, eighthSeed, games: playInGames };
   }
 
-  /**
-   * Run multiple simulations to estimate championship probabilities.
-   */
   async runMultipleSimulations(count: number = 1000): Promise<{ team: string; probability: number }[]> {
     const championshipCount: Record<string, number> = {};
     const allTeams = await this.fetchTeamData();

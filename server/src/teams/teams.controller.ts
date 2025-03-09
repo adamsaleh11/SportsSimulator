@@ -5,6 +5,9 @@ import { Controller, Post, Body } from '@nestjs/common';
       offense: number;
       defense: number;
       threePoint: number;
+      luckFactor: number;
+      winPercentage: number;
+      homeCourt: number;
     }
 
     @Controller('api')

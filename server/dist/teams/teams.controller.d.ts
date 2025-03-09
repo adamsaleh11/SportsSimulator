@@ -3,6 +3,9 @@ interface WeightingsDto {
     offense: number;
     defense: number;
     threePoint: number;
+    luckFactor: number;
+    winPercentage: number;
+    homeCourt: number;
 }
 export declare class TeamsController {
     private readonly teamsService;
