@@ -12,33 +12,34 @@ const common_1 = require("@nestjs/common");
 const teams_entity_1 = require("./teams.entity");
 let TeamsService = TeamsService_1 = class TeamsService {
     logger = new common_1.Logger(TeamsService_1.name);
-    DEFENSE_WEIGHT = 0.25;
-    SHOOTING_WEIGHT = 0.15;
-    OFFENSE_WEIGHT = 0.25;
+    DEFENSE_WEIGHT = 0.40;
+    SHOOTING_WEIGHT = 0.25;
+    OFFENSE_WEIGHT = 0.20;
     WIN_PCT_WEIGHT = 0.15;
-    HOME_COURT_ADVANTAGE = 0.10;
-    MAX_LUCK_FACTOR = 0.10;
+    HOME_COURT_ADVANTAGE = 0.05;
+    MAX_LUCK_FACTOR = 0.08;
+    PLAYOFF_INTENSITY_FACTOR = 0.9;
     TEAMS = [
         new teams_entity_1.Team('Cleveland Cavaliers', 116.5, 107.8, 36.5, 'Eastern', 0.820),
         new teams_entity_1.Team('Boston Celtics', 123.0, 109.0, 39.0, 'Eastern', 0.780),
         new teams_entity_1.Team('New York Knicks', 117.8, 111.5, 37.0, 'Eastern', 0.710),
         new teams_entity_1.Team('Milwaukee Bucks', 118.5, 113.5, 37.5, 'Eastern', 0.690),
         new teams_entity_1.Team('Indiana Pacers', 119.0, 114.8, 38.0, 'Eastern', 0.670),
-        new teams_entity_1.Team('Philadelphia 76ers', 115.0, 112.0, 37.3, 'Eastern', 0.650),
-        new teams_entity_1.Team('Miami Heat', 114.2, 113.0, 36.0, 'Eastern', 0.610),
+        new teams_entity_1.Team('Detroit Pistons', 114.0, 111.0, 35.0, 'Eastern', 0.650),
+        new teams_entity_1.Team('Atlanta Hawks', 116.0, 117.0, 36.8, 'Eastern', 0.620),
         new teams_entity_1.Team('Orlando Magic', 113.8, 110.0, 35.5, 'Eastern', 0.590),
-        new teams_entity_1.Team('Chicago Bulls', 112.8, 115.0, 36.0, 'Eastern', 0.570),
-        new teams_entity_1.Team('Atlanta Hawks', 116.0, 117.0, 36.8, 'Eastern', 0.550),
+        new teams_entity_1.Team('Miami Heat', 114.2, 113.0, 36.0, 'Eastern', 0.570),
+        new teams_entity_1.Team('Chicago Bulls', 112.8, 115.0, 36.0, 'Eastern', 0.550),
         new teams_entity_1.Team('Oklahoma City Thunder', 119.8, 109.5, 39.5, 'Western', 0.810),
-        new teams_entity_1.Team('Los Angeles Lakers', 116.0, 113.5, 36.0, 'Western', 0.760),
-        new teams_entity_1.Team('Denver Nuggets', 118.8, 111.0, 37.5, 'Western', 0.740),
-        new teams_entity_1.Team('Minnesota Timberwolves', 115.2, 107.0, 38.0, 'Western', 0.720),
-        new teams_entity_1.Team('Los Angeles Clippers', 116.5, 112.5, 38.5, 'Western', 0.700),
+        new teams_entity_1.Team('Denver Nuggets', 118.8, 111.0, 37.5, 'Western', 0.760),
+        new teams_entity_1.Team('Los Angeles Lakers', 116.0, 113.5, 36.0, 'Western', 0.740),
+        new teams_entity_1.Team('Memphis Grizzlies', 117.0, 112.5, 37.0, 'Western', 0.720),
+        new teams_entity_1.Team('Houston Rockets', 116.5, 113.0, 36.5, 'Western', 0.700),
         new teams_entity_1.Team('Golden State Warriors', 117.5, 114.0, 39.0, 'Western', 0.680),
-        new teams_entity_1.Team('Phoenix Suns', 118.0, 113.0, 38.0, 'Western', 0.650),
-        new teams_entity_1.Team('Sacramento Kings', 117.3, 114.5, 36.5, 'Western', 0.630),
-        new teams_entity_1.Team('Dallas Mavericks', 119.5, 114.0, 37.0, 'Western', 0.610),
-        new teams_entity_1.Team('New Orleans Pelicans', 116.5, 112.0, 36.8, 'Western', 0.590),
+        new teams_entity_1.Team('Minnesota Timberwolves', 115.2, 107.0, 38.0, 'Western', 0.660),
+        new teams_entity_1.Team('Los Angeles Clippers', 116.5, 112.5, 38.5, 'Western', 0.640),
+        new teams_entity_1.Team('Sacramento Kings', 117.3, 114.5, 36.5, 'Western', 0.620),
+        new teams_entity_1.Team('Dallas Mavericks', 119.5, 114.0, 37.0, 'Western', 0.600),
     ];
     async fetchTeamData() {
         const teams = this.TEAMS.map(team => {
@@ -82,18 +83,39 @@ let TeamsService = TeamsService_1 = class TeamsService {
         let team2Wins = 0;
         const games = [];
         const maxWins = isPlayIn ? 1 : 4;
+        const baselineTeam1Rating = 1 / (team1.weightedRating || 1);
+        const baselineTeam2Rating = 1 / (team2.weightedRating || 1);
+        const ratingDiff = Math.abs(baselineTeam1Rating - baselineTeam2Rating);
+        const adjustedRatingDiff = ratingDiff * this.PLAYOFF_INTENSITY_FACTOR;
+        const favorite = baselineTeam1Rating > baselineTeam2Rating ? team1 : team2;
+        const underdog = favorite === team1 ? team2 : team1;
+        let underdogMomentum = 0;
         while (team1Wins < maxWins && team2Wins < maxWins) {
             const gameNumber = team1Wins + team2Wins + 1;
             const team1HasHomeCourt = isPlayIn || [1, 2, 5, 7].includes(gameNumber);
-            const luckFactor = (Math.random() * (this.MAX_LUCK_FACTOR * 2)) - this.MAX_LUCK_FACTOR;
-            let team1EffectiveRating = 1 / (team1.weightedRating || 1) + luckFactor;
-            let team2EffectiveRating = 1 / (team2.weightedRating || 1);
-            if (team1HasHomeCourt)
+            const baseLuckFactor = (Math.random() * (this.MAX_LUCK_FACTOR * 2)) - this.MAX_LUCK_FACTOR;
+            const desperationFactor = this.calculateDesperationFactor(team1, team2, team1Wins, team2Wins, maxWins);
+            underdogMomentum = this.updateMomentum(underdogMomentum, team1, team2, team1Wins, team2Wins, favorite);
+            let team1EffectiveRating = baselineTeam1Rating;
+            let team2EffectiveRating = baselineTeam2Rating;
+            if (team1HasHomeCourt) {
                 team1EffectiveRating += this.HOME_COURT_ADVANTAGE;
-            else
+            }
+            else {
                 team2EffectiveRating += this.HOME_COURT_ADVANTAGE;
-            const ratingDifference = Math.abs(team1EffectiveRating - team2EffectiveRating);
-            const margin = Math.max(1, Math.floor(ratingDifference * 50) + (Math.floor(Math.random() * 10) - 5));
+            }
+            if (underdog === team1) {
+                team1EffectiveRating += underdogMomentum;
+            }
+            else {
+                team2EffectiveRating += underdogMomentum;
+            }
+            team1EffectiveRating += desperationFactor.team1;
+            team2EffectiveRating += desperationFactor.team2;
+            team1EffectiveRating += baseLuckFactor;
+            team2EffectiveRating += (Math.random() * (this.MAX_LUCK_FACTOR * 2)) - this.MAX_LUCK_FACTOR;
+            const effectiveRatingDiff = Math.abs(team1EffectiveRating - team2EffectiveRating);
+            const margin = Math.max(1, Math.floor(effectiveRatingDiff * 30) + (Math.floor(Math.random() * 8) - 4));
             const homeTeam = team1HasHomeCourt ? team1.name : team2.name;
             if (team1EffectiveRating > team2EffectiveRating) {
                 team1Wins++;
@@ -126,6 +148,26 @@ let TeamsService = TeamsService_1 = class TeamsService {
             team2Name: team2.name,
             games,
         };
+    }
+    calculateDesperationFactor(team1, team2, team1Wins, team2Wins, maxWins) {
+        const result = { team1: 0, team2: 0 };
+        if (team2Wins === maxWins - 1) {
+            result.team1 += 0.03;
+        }
+        if (team1Wins === maxWins - 1) {
+            result.team2 += 0.03;
+        }
+        return result;
+    }
+    updateMomentum(currentMomentum, team1, team2, team1Wins, team2Wins, favorite) {
+        const totalGames = team1Wins + team2Wins;
+        if (favorite === team1 && team2Wins > 0) {
+            return Math.min(0.05, currentMomentum + 0.01 * team2Wins);
+        }
+        else if (favorite === team2 && team1Wins > 0) {
+            return Math.min(0.05, currentMomentum + 0.01 * team1Wins);
+        }
+        return Math.min(0.03, currentMomentum + 0.005 * totalGames);
     }
     async simulatePlayoffs() {
         const allTeams = await this.fetchTeamData();
@@ -177,6 +219,7 @@ let TeamsService = TeamsService_1 = class TeamsService {
     }
     async runMultipleSimulations(count = 1000) {
         const championshipCount = {};
+        const seriesLengthDistribution = { 4: 0, 5: 0, 6: 0, 7: 0 };
         const allTeams = await this.fetchTeamData();
         allTeams.forEach(team => (championshipCount[team.name] = 0));
         for (let i = 0; i < count; i++) {
@@ -184,12 +227,34 @@ let TeamsService = TeamsService_1 = class TeamsService {
             if (results.Finals?.winner) {
                 championshipCount[results.Finals.winner.name]++;
             }
+            this.trackSeriesLengths(results, seriesLengthDistribution);
         }
         const probabilities = Object.entries(championshipCount)
             .map(([team, wins]) => ({ team, probability: (wins / count) * 100 }))
             .sort((a, b) => b.probability - a.probability);
+        const totalSeries = Object.values(seriesLengthDistribution).reduce((sum, count) => sum + count, 0);
+        this.logger.log(`Series length distribution: 
+      4 games (sweep): ${(seriesLengthDistribution[4] / totalSeries * 100).toFixed(2)}%
+      5 games: ${(seriesLengthDistribution[5] / totalSeries * 100).toFixed(2)}%
+      6 games: ${(seriesLengthDistribution[6] / totalSeries * 100).toFixed(2)}%
+      7 games: ${(seriesLengthDistribution[7] / totalSeries * 100).toFixed(2)}%`);
         this.logger.log(`Completed ${count} playoff simulations. Top team: ${probabilities[0].team} (${probabilities[0].probability.toFixed(2)}%)`);
         return probabilities;
+    }
+    trackSeriesLengths(results, distribution) {
+        const countGames = (series) => {
+            if (!series)
+                return;
+            const totalGames = series.team1Wins + series.team2Wins;
+            distribution[totalGames] = (distribution[totalGames] || 0) + 1;
+        };
+        results.Eastern.round1.forEach(countGames);
+        results.Eastern.round2.forEach(countGames);
+        countGames(results.Eastern.finals);
+        results.Western.round1.forEach(countGames);
+        results.Western.round2.forEach(countGames);
+        countGames(results.Western.finals);
+        countGames(results.Finals);
     }
 };
 exports.TeamsService = TeamsService;
